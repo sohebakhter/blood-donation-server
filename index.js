@@ -180,6 +180,14 @@ async function run() {
       res.send(result);
     });
 
+    //pending based all data
+    app.get("/donation-requests", async (req, res) => {
+      const status = req.query.status;
+      const query = { donationStatus: status };
+      const result = await donationRequestsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/donation-requests", async (req, res) => {
       const isStatus = req.query.status;
       const query = { status: isStatus };

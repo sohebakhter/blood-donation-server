@@ -160,6 +160,19 @@ async function run() {
       res.send(result);
     });
 
+    //search এর জন্য get
+    app.get("/search-donors", async (req, res) => {
+      const { bloodGroup, district, upazila } = req.query;
+
+      const query = {};
+      if (bloodGroup) query.bloodGroup = bloodGroup;
+      if (district) query.recipientDistrict = district;
+      if (upazila) query.recipientUpazila = upazila;
+
+      const result = await donationRequestsCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/donation-requests", async (req, res) => {
       const isStatus = req.query.status;
       const query = { status: isStatus };

@@ -63,6 +63,26 @@ async function run() {
       res.send(result);
     });
 
+    //search এর জন্য get
+    app.get("/search-donors", async (req, res) => {
+      const { bloodGroup, district, upazila, role } = req.query;
+      // console.log("role ==========", role);
+
+      const query2 = { role: role };
+      const isDonor = await usersCollection.findOne(query2);
+      if (!isDonor) {
+        return res.status(406).send({ message: "This Search not for Donor" });
+      }
+
+      const query = {};
+      if (bloodGroup) query.bloodGroup = bloodGroup;
+      if (district) query.district = district;
+      if (upazila) query.upazila = upazila;
+
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       user.role = "donor";
@@ -157,19 +177,6 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await donationRequestsCollection.findOne(query);
-      res.send(result);
-    });
-
-    //search এর জন্য get
-    app.get("/search-donors", async (req, res) => {
-      const { bloodGroup, district, upazila } = req.query;
-
-      const query = {};
-      if (bloodGroup) query.bloodGroup = bloodGroup;
-      if (district) query.recipientDistrict = district;
-      if (upazila) query.recipientUpazila = upazila;
-
-      const result = await donationRequestsCollection.find(query).toArray();
       res.send(result);
     });
 

@@ -224,7 +224,7 @@ async function run() {
           .status(406)
           .send({ message: "User is not about to make Request" });
       }
-
+      ///////////////
       const donationRequest = req.body;
       donationRequest.createdAt = new Date();
       const result = await donationRequestsCollection.insertOne(
@@ -293,7 +293,6 @@ async function run() {
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
-            // Provide the exact Price ID (for example, price_1234) of the product you want to sell
             price_data: {
               currency: "USD",
               unit_amount: amount,
@@ -305,7 +304,7 @@ async function run() {
           },
         ],
         metadata: {
-          parcelId: paymentInfo.parcelId,
+          createdAt: paymentInfo.createdAt,
           senderName: paymentInfo.senderName,
         },
         customer_email: paymentInfo.senderEmail,
@@ -314,6 +313,26 @@ async function run() {
         cancel_url: `${process.env.SITE_DOMAIN}/funding/payment-cancelled`,
       });
       res.send({ url: session.url });
+    });
+
+    app.post(`/payment-success`, async (req, res) => {
+      const sessionId = req.query.session_id;
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      // console.log("sessoin info", session);
+      if (session.payment_status === "paid") {
+        const dollar = session.amount_total / 100;
+        const paymentInfo = {
+          paymentStatus: session.payment_status,
+          transactionId: session.payment_intent,
+          senderName: session.metadata.senderName,
+          senderEmail: session.customer_email,
+          amount: dollar,
+          createdAt: new Date(),
+        };
+        const result = await paymentsCollection.insertOne(paymentInfo);
+        return res.send(result);
+      }
+      return res.send({ success: false });
     });
 
     // Send a ping to confirm a successful connection

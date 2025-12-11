@@ -124,7 +124,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/user-profile/:id", async (req, res) => {
+    app.patch("/user-profile/:id", verifyFBToken, async (req, res) => {
       const { displayName, bloodGroup } = req.body;
 
       const id = req.params.id;
@@ -142,7 +142,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/user-status/:id", async (req, res) => {
+    app.patch("/user-status/:id", verifyFBToken, async (req, res) => {
       const { status } = req.body;
 
       const id = req.params.id;
@@ -154,7 +154,7 @@ async function run() {
       res.send(result);
     });
     //--
-    app.patch("/user-role/:id", async (req, res) => {
+    app.patch("/user-role/:id", verifyFBToken, async (req, res) => {
       const { role } = req.body;
 
       const id = req.params.id;
@@ -186,7 +186,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my-donation-requests", async (req, res) => {
+    app.get("/my-donation-requests", verifyFBToken, async (req, res) => {
       const email = req.query.email;
       const { limit = 0, skip = 0 } = req.query;
       const query = {};
@@ -220,7 +220,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/donation-requests", async (req, res) => {
+    app.post("/donation-requests", verifyFBToken, async (req, res) => {
       const isStatus = req.query.status;
       const query = { status: isStatus };
       const activeUser = await usersCollection.findOne(query);
@@ -238,7 +238,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/donation-requests/:id", async (req, res) => {
+    app.patch("/donation-requests/:id", verifyFBToken, async (req, res) => {
       const { donationStatus } = req.body;
 
       const id = req.params.id;
@@ -255,36 +255,40 @@ async function run() {
       res.send(result);
     });
     //edit-donation-req total data(এর জন্য)
-    app.patch("/update-donation-request/:id", async (req, res) => {
-      const {
-        recipientName,
-        recipientDistrict,
-        recipientUpazila,
-        hospitalName,
-        fullAddress,
-        donationStatus,
-      } = req.body;
-
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const updateWholeData = {
-        $set: {
+    app.patch(
+      "/update-donation-request/:id",
+      verifyFBToken,
+      async (req, res) => {
+        const {
           recipientName,
           recipientDistrict,
           recipientUpazila,
           hospitalName,
           fullAddress,
           donationStatus,
-        },
-      };
-      const result = await donationRequestsCollection.updateOne(
-        query,
-        updateWholeData
-      );
-      res.send(result);
-    });
+        } = req.body;
 
-    app.delete("/donation-requests/:id", async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updateWholeData = {
+          $set: {
+            recipientName,
+            recipientDistrict,
+            recipientUpazila,
+            hospitalName,
+            fullAddress,
+            donationStatus,
+          },
+        };
+        const result = await donationRequestsCollection.updateOne(
+          query,
+          updateWholeData
+        );
+        res.send(result);
+      }
+    );
+
+    app.delete("/donation-requests/:id", verifyFBToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await donationRequestsCollection.deleteOne(query);
@@ -297,7 +301,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/create-checkout-session", async (req, res) => {
+    app.post("/create-checkout-session", verifyFBToken, async (req, res) => {
       const paymentInfo = req.body;
       const amount = parseInt(paymentInfo.cost) * 100;
       const session = await stripe.checkout.sessions.create({

@@ -188,15 +188,20 @@ async function run() {
 
     app.get("/my-donation-requests", async (req, res) => {
       const email = req.query.email;
+      const { limit = 0, skip = 0 } = req.query;
       const query = {};
       if (email) {
         query.requesterEmail = email;
       }
+      const totalCount = await donationRequestsCollection.countDocuments();
+
       const result = await donationRequestsCollection
         .find(query)
+        .limit(Number(limit))
+        .skip(Number(skip))
         .sort({ createdAt: -1 })
         .toArray();
-      res.send(result);
+      res.send({ data: result, total: totalCount });
     });
 
     //id based donation request for (editing)
@@ -287,6 +292,11 @@ async function run() {
     });
 
     //payments related apis----------------------------------------------------------------------------------------------------
+    app.get("/payments", async (req, res) => {
+      const result = await paymentsCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/create-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
       const amount = parseInt(paymentInfo.cost) * 100;

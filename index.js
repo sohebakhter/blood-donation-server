@@ -4,10 +4,37 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 require("dotenv").config();
 const port = process.env.PORT || 3000;
+const stripe = require("stripe")(process.env.SECRET_KEY);
+///////////////////////////
+var admin = require("firebase-admin");
+
+var serviceAccount = require("./blood-donation-firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+////////////////////////////////
 
 //middleware
 app.use(express.json());
 app.use(cors());
+
+const verifyFBToken = async (req, res, next) => {
+  const token = req.headers.authorization;
+  // console.log(token);
+  if (!token) {
+    res.status(401).send({ message: "Unauthorized Access" });
+  }
+  try {
+    const idToken = token.split(" ")[1];
+    const decoded = await admin.auth().verifyIdToken(idToken);
+
+    req.decoded_email = decoded.email;
+    next();
+  } catch (error) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+};
 
 app.get("/", (req, res) => {
   res.send(" Blood Donation Server Running...");
@@ -30,7 +57,7 @@ async function run() {
     const db = client.db("bloodDonationDB");
     const usersCollection = db.collection("users");
     const donationRequestsCollection = db.collection("donationRequests");
-
+    const paymentsCollection = db.collection("payments");
     //users related apis--------------------------------------------------------------------------
     app.get("/users", async (req, res) => {
       const role = req.query.role;
@@ -257,6 +284,36 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await donationRequestsCollection.deleteOne(query);
       res.send(result);
+    });
+
+    //payments related apis----------------------------------------------------------------------------------------------------
+    app.post("/create-checkout-session", async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = parseInt(paymentInfo.cost) * 100;
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            // Provide the exact Price ID (for example, price_1234) of the product you want to sell
+            price_data: {
+              currency: "USD",
+              unit_amount: amount,
+              product_data: {
+                name: paymentInfo.parcelName,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          parcelId: paymentInfo.parcelId,
+          senderName: paymentInfo.senderName,
+        },
+        customer_email: paymentInfo.senderEmail,
+        mode: "payment",
+        success_url: `${process.env.SITE_DOMAIN}/funding/payment-success?session_id={CHECKOUT_SESSION_ID}`, //ekhane eta string hole o eta kintu dynamic, autometic dynamic by stripe
+        cancel_url: `${process.env.SITE_DOMAIN}/funding/payment-cancelled`,
+      });
+      res.send({ url: session.url });
     });
 
     // Send a ping to confirm a successful connection

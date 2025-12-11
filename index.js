@@ -319,6 +319,12 @@ async function run() {
       const sessionId = req.query.session_id;
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       // console.log("sessoin info", session);
+      const query = { transactionId: session.payment_intent };
+      const paymentExits = await paymentsCollection.findOne(query);
+      if (paymentExits) {
+        return res.send({ message: "payment already exits" });
+      }
+
       if (session.payment_status === "paid") {
         const dollar = session.amount_total / 100;
         const paymentInfo = {
@@ -329,6 +335,7 @@ async function run() {
           amount: dollar,
           createdAt: new Date(),
         };
+
         const result = await paymentsCollection.insertOne(paymentInfo);
         return res.send(result);
       }

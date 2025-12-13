@@ -186,7 +186,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my-donation-requests", verifyFBToken, async (req, res) => {
+    app.get("/my-donation-requests", async (req, res) => {
       const email = req.query.email;
       const { limit = 0, skip = 0 } = req.query;
       const query = {};

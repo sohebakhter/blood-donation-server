@@ -93,7 +93,6 @@ async function run() {
     //search এর জন্য get
     app.get("/search-donors", async (req, res) => {
       const { bloodGroup, district, upazila, role } = req.query;
-      // console.log("role ==========", role);
 
       const query2 = { role: role };
       const isDonor = await usersCollection.findOne(query2);
@@ -299,6 +298,26 @@ async function run() {
     app.get("/payments", async (req, res) => {
       const result = await paymentsCollection.find().toArray();
       res.send(result);
+    });
+
+    app.get("/all-payments", async (req, res) => {
+      const limit = Number(req.query.limit) || 10;
+      const skip = Number(req.query.skip) || 0;
+      // console.log(limit, skip, "------------------");
+
+      const totalCount = await paymentsCollection.countDocuments();
+
+      const result = await paymentsCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      res.send({
+        data: result,
+        total: totalCount,
+      });
     });
 
     app.post("/create-checkout-session", verifyFBToken, async (req, res) => {

@@ -1,3 +1,4 @@
 node_modules
 .env
 blood-donation-firebase-adminsdk.json
+.vercel

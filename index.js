@@ -319,9 +319,10 @@ async function run() {
       });
     });
 
-    app.post("/create-checkout-session", verifyFBToken, async (req, res) => {
+    app.post("/create-checkout-session", async (req, res) => {
       const paymentInfo = req.body;
-      const amount = parseInt(paymentInfo.cost) * 100;
+      const amount = parseInt(paymentInfo.amount) * 100;
+
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {

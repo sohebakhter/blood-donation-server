@@ -219,14 +219,15 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/donation-requests", verifyFBToken, async (req, res) => {
-      const isStatus = req.query.status;
-      const query = { status: isStatus };
+    app.post("/donation-requests", async (req, res) => {
+      const email = req.body.requesterEmail;
+      const query = { email: email, status: "active" };
       const activeUser = await usersCollection.findOne(query);
+
       if (!activeUser) {
         return res
           .status(406)
-          .send({ message: "User is not about to make Request" });
+          .send({ message: "blocked User can't Create Request" });
       }
       ///////////////
       const donationRequest = req.body;
